@@ -9,6 +9,10 @@ import base64
 import csv
 import glob
 
+SENDER_NAME = "P-Side"
+TEST_MODE = True
+TEST_EMAIL = "pb.sledge.94@gmail.com"
+
 def generate_email_body_html(row: dict):
     return f'''
     <html>
@@ -61,31 +65,40 @@ def main():
 
     service = build('gmail', 'v1', credentials=creds)
 
-    # Call the Gmail API
-    results = service.users().labels().list(userId='me').execute()
-    labels = results.get('labels', [])
-
-    if not labels:
-        print('No labels found.')
-    else:
-        print('Labels:')
-        for label in labels:
-            print(label['name'])
-
     # Import CSV files
     csv_file_path = "./CSV/*.csv"
     csv_file_list = glob.glob(csv_file_path)
     for csv_file_name in csv_file_list:
+        total_rows = len(open(csv_file_name).readlines())
         with open(csv_file_name) as csv_file:
             csv_reader = csv.DictReader(csv_file, delimiter=',')
+            first_row = True
+            
             for row in csv_reader:
                 body_html = generate_email_body_html(row)
                 subject = generate_email_subject(row)
-                print(body_html)
+                if (first_row and not TEST_MODE):
+                    if input(f'''
+Ready to send this template to {total_rows} recipients:
+
+Subject: {subject}
+
+Body: 
+{body_html}
+
+****************************************************************
+
+If you are ready to send, type 'yes'
+'''                 )!= 'yes':
+                        return 
+                    first_rote = False
                 # Send Email
-                message = create_message("P-Side", row['Email'], subject, body_html)
+                email = TEST_EMAIL if TEST_MODE else row['Email']
+                message = create_message(SENDER_NAME, email, subject, body_html)
+                print(f"\nSending to: {email}")
                 send_message(service, message)
-                return
+                if (TEST_MODE):
+                    return
 
 def create_message(sender, to, subject, message_html):
   message = MIMEText(message_html, 'html')
