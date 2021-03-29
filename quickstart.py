@@ -6,22 +6,36 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from email.mime.text import MIMEText
 import base64
+import csv
+import glob
+
+def generate_email_body_html(row: dict):
+    return f'''
+    <html>
+        <body>
+            <p">Hi {row['Owner Name']}!</p>
+            <p>I made a sweet little lofi track with lyrics. The song talks about lost friendships throughout the years. 
+            Writing and producing it kinda helped me find peace. The track is pretty meaningful to me. 
+            I was thinking it could be a nice fit in your <i>{row['Name']}</i> playlist. Let me know what you think!</p>
+            <p"><a href="https://open.spotify.com/track/6o3egSS1DEob4VW6SBH18X?si=e9c36fc2aa4a4fd9">P-Side - Call Me Another Day</a></p>
+            <p>Have an awesome day!</p>
+            {generate_email_signature_html()} 
+        </body>  
+    </html>
+    '''
+
+def generate_email_signature_html():
+    return f'''
+    <p><span style="color: #808080;">--</span></p>
+    <p><span style="color: #808080;">Paul Brière (P-Side)</span><br />
+    <a href="https://pside.contactin.bio/">p-side.com</a></p>
+    '''
+
+def generate_email_subject(row: dict):
+    return f'Submission (Call Me Another Day)'
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/gmail.send']
-
-NAME= "name"
-
-email_html = f'''
-<html>
-    <body>
-    <p">Hi {NAME}!</p>
-    <p>I made a sweet little lofi track with lyrics. The song talks about lost friendships throughout the years. Writing and producing it kinda helped me find peace. The track is pretty meaningful to me. I was thinking it could be a nice fit in one of your lofi playlists. Let me know what you think!</p>
-    <p"><a href="https://open.spotify.com/track/6o3egSS1DEob4VW6SBH18X?si=e9c36fc2aa4a4fd9">P-Side - Call Me Another Day</a></p>
-    <p>Have an awesome day!</p>
-    </body>
-</html>
-'''
 
 def main():
     """Shows basic usage of the Gmail API.
@@ -58,9 +72,20 @@ def main():
         for label in labels:
             print(label['name'])
 
-    # Send Email
-    message = create_message("PB Sledge", "paul.briere94@gmail.com", 'test', email_html)
-    send_message(service, message)
+    # Import CSV files
+    csv_file_path = "./CSV/*.csv"
+    csv_file_list = glob.glob(csv_file_path)
+    for csv_file_name in csv_file_list:
+        with open(csv_file_name) as csv_file:
+            csv_reader = csv.DictReader(csv_file, delimiter=',')
+            for row in csv_reader:
+                body_html = generate_email_body_html(row)
+                subject = generate_email_subject(row)
+                print(body_html)
+                # Send Email
+                message = create_message("P-Side", row['Email'], subject, body_html)
+                send_message(service, message)
+                return
 
 def create_message(sender, to, subject, message_html):
   message = MIMEText(message_html, 'html')
