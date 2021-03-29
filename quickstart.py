@@ -9,6 +9,7 @@ import base64
 import csv
 import glob
 import argparse
+import chevron
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-t", "--test", action='store_true', help="run in test mode")
@@ -16,27 +17,9 @@ parser.add_argument("-t", "--test", action='store_true', help="run in test mode"
 SENDER_NAME = "P-Side"
 TEST_EMAIL = "pb.sledge.94@gmail.com"
 
-def generate_email_body_html(row: dict):
-    return f'''
-    <html>
-        <body>
-            <p">Hi {row['Owner Name']}!</p>
-            <p>I made a sweet little lofi track with lyrics. The song talks about lost friendships throughout the years. 
-            Writing and producing it kinda helped me find peace. The track is pretty meaningful to me. 
-            I was thinking it could be a nice fit in your <i>{row['Name']}</i> playlist. Let me know what you think!</p>
-            <p"><a href="https://open.spotify.com/track/6o3egSS1DEob4VW6SBH18X?si=e9c36fc2aa4a4fd9">P-Side - Call Me Another Day</a></p>
-            <p>Have an awesome day!</p>
-            {generate_email_signature_html()} 
-        </body>  
-    </html>
-    '''
-
-def generate_email_signature_html():
-    return f'''
-    <p><span style="color: #808080;">--</span></p>
-    <p><span style="color: #808080;">Paul Brière (P-Side)</span><br />
-    <a href="https://pside.contactin.bio/">p-side.com</a></p>
-    '''
+def generate_email_html(row: dict):
+    with open('template.mustache', 'r') as f:
+        return chevron.render(f, {'owner': row['Owner Name'], 'name' : row['Name']})  
 
 def generate_email_subject(row: dict):
     return f'Submission (Call Me Another Day)'
@@ -82,7 +65,7 @@ def main():
             first_row = True
             
             for row in csv_reader:
-                body_html = generate_email_body_html(row)
+                body_html = generate_email_html(row)
                 subject = generate_email_subject(row)
                 if (first_row and not TEST_MODE):
                     if input(f'''
@@ -98,7 +81,7 @@ Body:
 If you are ready to send, type 'yes'
 '''                 )!= 'yes':
                         return 
-                    first_rote = False
+                    first_row = False
                 # Send Email
                 email = TEST_EMAIL if TEST_MODE else row['Email']
                 message = create_message(SENDER_NAME, email, subject, body_html)
