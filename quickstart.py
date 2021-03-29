@@ -10,6 +10,19 @@ import base64
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/gmail.send']
 
+NAME= "name"
+
+email_html = f'''
+<html>
+    <body>
+    <p">Hi {NAME}!</p>
+    <p>I made a sweet little lofi track with lyrics. The song talks about lost friendships throughout the years. Writing and producing it kinda helped me find peace. The track is pretty meaningful to me. I was thinking it could be a nice fit in one of your lofi playlists. Let me know what you think!</p>
+    <p"><a href="https://open.spotify.com/track/6o3egSS1DEob4VW6SBH18X?si=e9c36fc2aa4a4fd9">P-Side - Call Me Another Day</a></p>
+    <p>Have an awesome day!</p>
+    </body>
+</html>
+'''
+
 def main():
     """Shows basic usage of the Gmail API.
     Lists the user's Gmail labels.
@@ -46,11 +59,11 @@ def main():
             print(label['name'])
 
     # Send Email
-    message = create_message("PB Sledge", "p.side.94@gmail.com", 'test', """This is a test""")
+    message = create_message("PB Sledge", "paul.briere94@gmail.com", 'test', email_html)
     send_message(service, message)
 
-def create_message(sender, to, subject, message_text):
-  message = MIMEText(message_text)
+def create_message(sender, to, subject, message_html):
+  message = MIMEText(message_html, 'html')
   message['to'] = to
   message['from'] = sender
   message['subject'] = subject
