@@ -8,9 +8,12 @@ from email.mime.text import MIMEText
 import base64
 import csv
 import glob
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-t", "--test", action='store_true', help="run in test mode")
 
 SENDER_NAME = "P-Side"
-TEST_MODE = True
 TEST_EMAIL = "pb.sledge.94@gmail.com"
 
 def generate_email_body_html(row: dict):
@@ -42,6 +45,10 @@ def generate_email_subject(row: dict):
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/gmail.send']
 
 def main():
+
+    args = parser.parse_args()
+    TEST_MODE = args.test
+
     """Shows basic usage of the Gmail API.
     Lists the user's Gmail labels.
     """
