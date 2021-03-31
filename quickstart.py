@@ -14,15 +14,12 @@ import chevron
 parser = argparse.ArgumentParser()
 parser.add_argument("-t", "--test", action='store_true', help="run in test mode")
 
+EMAIL_SUBJECT = "Submission (Silly)"
+TEMPLATE_FILE_NAME = 'silly'
+CSV_FILE_NAME = 'silly'
+
 SENDER_NAME = "P-Side"
-TEST_EMAIL = "pb.sledge.94@gmail.com"
-
-def generate_email_html(row: dict):
-    with open('template.mustache', 'r') as f:
-        return chevron.render(f, {'owner': row['Owner Name'], 'name' : row['Name']})  
-
-def generate_email_subject(row: dict):
-    return f'Submission (Call Me Another Day)'
+TEST_EMAIL = "p.side.94@gmail.com"
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/gmail.send']
@@ -56,19 +53,18 @@ def main():
     service = build('gmail', 'v1', credentials=creds)
 
     # Import CSV files
-    csv_file_path = "./CSV/*.csv"
-    csv_file_list = glob.glob(csv_file_path)
-    for csv_file_name in csv_file_list:
-        total_rows = len(open(csv_file_name).readlines())
-        with open(csv_file_name) as csv_file:
-            csv_reader = csv.DictReader(csv_file, delimiter=',')
-            first_row = True
-            
-            for row in csv_reader:
-                body_html = generate_email_html(row)
-                subject = generate_email_subject(row)
-                if (first_row and not TEST_MODE):
-                    if input(f'''
+    csv_file_name = f"./csv/{CSV_FILE_NAME}.csv"
+    total_rows = len(open(csv_file_name).readlines())
+    with open(csv_file_name) as csv_file:
+        csv_reader = csv.DictReader(csv_file, delimiter=',')
+        first_row = True
+        for row in csv_reader:
+            with open(f'./templates/{TEMPLATE_FILE_NAME}.mustache', 'r') as f:
+                body_html = chevron.render(f, {'owner': row['Owner Name'], 'name' : row['Name']})  
+                subject = EMAIL_SUBJECT
+
+            if (first_row and not TEST_MODE):
+                if input(f'''
 Ready to send this template to {total_rows} recipients:
 
 Subject: {subject}
@@ -79,16 +75,16 @@ Body:
 ****************************************************************
 
 If you are ready to send, type 'yes'
-'''                 )!= 'yes':
-                        return 
-                    first_row = False
-                # Send Email
-                email = TEST_EMAIL if TEST_MODE else row['Email']
-                message = create_message(SENDER_NAME, email, subject, body_html)
-                print(f"\nSending to: {email}")
-                send_message(service, message)
-                if (TEST_MODE):
-                    return
+'''             )!= 'yes':
+                    return 
+                first_row = False
+            # Send Email
+            email = TEST_EMAIL if TEST_MODE else row['Email']
+            message = create_message(SENDER_NAME, email, subject, body_html)
+            print(f"\nSending to: {email}")
+            send_message(service, message)
+            if (TEST_MODE):
+                return
 
 def create_message(sender, to, subject, message_html):
   message = MIMEText(message_html, 'html')
